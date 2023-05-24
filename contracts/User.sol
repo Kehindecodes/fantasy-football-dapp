@@ -16,6 +16,7 @@ contract User{
     event UserRegistered(address indexed userAddress, string userName);
     event UserLoggedIn(address indexed userAddress);
     event UserLoggedOut(address indexed userAddress);
+    event BalanceUpadated(address indexed userAddress, uint256 newBalance  );
   
 
 function registerUser(string memory _username) public {
@@ -46,6 +47,18 @@ function logout() public  {
 
  function isLoggedIn(address _userAddress) public view returns (bool) {
         return users[_userAddress].isLoggedIn;
+    }
+
+    // set new  balance to  amount of  matic in  the user's wallet
+
+    function updateBalance(_newBalance) public{
+       users[msg.sender].balance = _newBalance
+
+       emit  BalanceUpadated(msg.sender, _newBalance);
+        
+    }
+   function getBalance(address _userAddress) public view returns (uint256) {
+        return users[_userAddress].balance;
     }
 
 
