@@ -1,32 +1,42 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
-
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+	const [deployer] = await ethers.getSigners();
 
-  const lockedAmount = hre.ethers.utils.parseEther("0.001");
+	// Compile and deploy the User contract
+	const User = await ethers.getContractFactory('User');
+	const userContract = await User.deploy();
+	await userContract.deployed();
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+	// Interact with the contract methods
+	const registerTx = await userContract.registerUser('Alice', deployer.address);
+	await registerTx.wait();
 
-  await lock.deployed();
+	const alice = await userContract.getUser(deployer.address);
+	console.log('Registered user:', alice);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+	console.log('logging user...');
+	const loginTx = await userContract.login();
+	await loginTx.wait();
+
+	const loggedIn = await userContract.isLoggedIn(deployer.address);
+	console.log('Is user logged in?', loggedIn);
+
+	const balanceUpdateTx = await userContract.updateBalance(100);
+	await balanceUpdateTx.wait();
+
+	const balance = await userContract.getBalance(deployer.address);
+	console.log('User balance:', balance);
+
+	console.log('logging out...');
+	const logoutTx = await userContract.logout();
+	await logoutTx.wait();
+
+	const loggedOut = await userContract.isLoggedIn(deployer.address);
+	console.log('Is user logged out?', loggedOut);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+	.then(() => process.exit(0))
+	.catch((error) => {
+		console.error(error);
+		process.exit(1);
+	});

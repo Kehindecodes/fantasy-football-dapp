@@ -3,6 +3,9 @@ pragma solidity ^0.8.9;
 
 contract User {
     struct UserData {
+        address userAddress;
+        string username;
+        uint256 balance;
         bool isLoggedIn;
     }
 
@@ -10,7 +13,7 @@ contract User {
     mapping(address => UserData) private users;
 
     // Event emitted when a new user is registered
-    event UserRegistered(address indexed userAddress);
+    event UserRegistered(address indexed userAddress, string username);
 
     // Event emitted when a user logs in
     event UserLoggedIn(address indexed userAddress);
@@ -18,19 +21,29 @@ contract User {
     // Event emitted when a user logs out
     event UserLoggedOut(address indexed userAddress);
 
+    event BalanceUpdated(address indexed userAddress, uint256 newBalance);
+
     /**
      * @dev Registers a new user by setting their isLoggedIn status to false.
      * Emits a UserRegistered event.
      */
-    function registerUser() public {
-        // Check if the user is already registered
-        require(!users[msg.sender].isLoggedIn, "User already registered");
+    function registerUser(
+        string memory _username,
+        address _userAddress
+    ) public {
+        require(
+            users[_userAddress].userAddress == address(0),
+            "User already registered"
+        );
+        users[_userAddress] = UserData(_userAddress, _username, 0, false);
 
-        // Set the isLoggedIn status to false for the new user
-        users[msg.sender].isLoggedIn = false;
+        emit UserRegistered(_userAddress, _username);
+    }
 
-        // Emit the UserRegistered event
-        emit UserRegistered(msg.sender);
+    function getUser(
+        address _userAddress
+    ) public view returns (UserData memory) {
+        return users[_userAddress];
     }
 
     /**
@@ -40,7 +53,6 @@ contract User {
     function login() public {
         // Check if the user is already logged in
         require(!users[msg.sender].isLoggedIn, "User already logged in");
-
         // Set the isLoggedIn status to true for the user
         users[msg.sender].isLoggedIn = true;
 
@@ -71,5 +83,14 @@ contract User {
     function isLoggedIn(address _userAddress) public view returns (bool) {
         // Return the isLoggedIn status of the user
         return users[_userAddress].isLoggedIn;
+    }
+
+    function updateBalance(uint256 _newBalance) public {
+        users[msg.sender].balance = _newBalance;
+        emit BalanceUpdated(msg.sender, _newBalance);
+    }
+
+    function getBalance(address _userAddress) public view returns (uint256) {
+        return users[_userAddress].balance;
     }
 }

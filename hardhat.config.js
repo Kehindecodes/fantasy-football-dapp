@@ -9,5 +9,8 @@ module.exports = {
 			url: process.env.POLYGON_TESTNET,
 			accounts: [process.env.PRIVATE_KEY],
 		},
+		hardhat: {
+			chainId: 1337,
+		},
 	},
 };
