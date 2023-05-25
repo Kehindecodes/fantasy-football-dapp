@@ -22,7 +22,6 @@ async function main() {
 
 	const balanceUpdateTx = await userContract.updateBalance(100);
 	await balanceUpdateTx.wait();
-
 	const balance = await userContract.getBalance(deployer.address);
 	console.log('User balance:', balance);
 
