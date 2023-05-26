@@ -210,7 +210,7 @@ contract User {
     }
 
     /**
-     * @dev Sorts the leaderboard in descending order based on total points using bubble sort algorithm.
+     * @dev Sorts the leaderboard in descending order based on total points using the quicksort algorithm.
      * @param addresses The array of user addresses.
      * @param points The array of total points.
      */
@@ -218,19 +218,69 @@ contract User {
         address[] memory addresses,
         uint256[] memory points
     ) private pure {
-        uint256 n = points.length;
-        for (uint256 i = 0; i < n - 1; i++) {
-            for (uint256 j = 0; j < n - i - 1; j++) {
-                if (points[j] < points[j + 1]) {
-                    // Swap addresses
-                    (addresses[j], addresses[j + 1]) = (
-                        addresses[j + 1],
-                        addresses[j]
-                    );
-                    // Swap points
-                    (points[j], points[j + 1]) = (points[j + 1], points[j]);
-                }
+        quicksort(addresses, points, int256(0), int256(points.length - 1));
+    }
+
+    /**
+     * @dev Quicksort algorithm implementation for sorting the leaderboard.
+     * @param addresses The array of user addresses.
+     * @param points The array of total points.
+     * @param left The left index of the array partition.
+     * @param right The right index of the array partition.
+     */
+    function quicksort(
+        address[] memory addresses,
+        uint256[] memory points,
+        int256 left,
+        int256 right
+    ) private pure {
+        if (left < right) {
+            int256 pivotIndex = partition(addresses, points, left, right);
+            quicksort(addresses, points, left, pivotIndex - 1);
+            quicksort(addresses, points, pivotIndex + 1, right);
+        }
+    }
+
+    /**
+     * @dev Partition function for quicksort algorithm.
+     * @param addresses The array of user addresses.
+     * @param points The array of total points.
+     * @param left The left index of the array partition.
+     * @param right The right index of the array partition.
+     * @return The index of the pivot element.
+     */
+    function partition(
+        address[] memory addresses,
+        uint256[] memory points,
+        int256 left,
+        int256 right
+    ) private pure returns (int256) {
+        uint256 pivot = points[uint256(right)];
+        int256 i = left - 1;
+
+        for (int256 j = left; j < right; j++) {
+            if (points[uint256(j)] >= pivot) {
+                i++;
+                (addresses[uint256(i)], addresses[uint256(j)]) = (
+                    addresses[uint256(j)],
+                    addresses[uint256(i)]
+                );
+                (points[uint256(i)], points[uint256(j)]) = (
+                    points[uint256(j)],
+                    points[uint256(i)]
+                );
             }
         }
+
+        (addresses[uint256(i + 1)], addresses[uint256(right)]) = (
+            addresses[uint256(right)],
+            addresses[uint256(i + 1)]
+        );
+        (points[uint256(i + 1)], points[uint256(right)]) = (
+            points[uint256(right)],
+            points[uint256(i + 1)]
+        );
+
+        return i + 1;
     }
 }

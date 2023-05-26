@@ -49,7 +49,7 @@ async function main() {
 	await logoutTx.wait();
 
 	const loggedOut = await userContract.isLoggedIn(deployer.address);
-	console.log('Is user logged out?', loggedOut);
+	console.log('Is user logged in?', loggedOut);
 }
 
 main()
