@@ -156,7 +156,7 @@ contract User {
      * @dev Retrieves the leaderboard, sorted in descending order based on total points.
      * @return An array of user addresses and an array of their corresponding total points.
      */
-    function getLeaderboard()
+    function getLeaderBoard()
         public
         view
         returns (address[] memory, uint256[] memory)
@@ -172,6 +172,21 @@ contract User {
 
         sortLeaderboard(addresses, points);
         return (addresses, points);
+    }
+
+    function getUserLeaderboardPosition(
+        address _userAddress
+    ) public view returns (uint256) {
+        (address[] memory addresses, ) = getLeaderBoard();
+        uint256 totalUsers = addresses.length;
+
+        for (uint256 i = 0; i < totalUsers; i++) {
+            if (addresses[i] == _userAddress) {
+                return i + 1; // Positions are indexed from 1
+            }
+        }
+
+        revert("User not found in leaderboard");
     }
 
     /**
