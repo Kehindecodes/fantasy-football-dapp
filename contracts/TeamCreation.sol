@@ -42,13 +42,12 @@ contract TeamCreation {
         newTeam.owner = msg.sender;
         newTeam.teamBudget = TEAM_BUDGET;
         newTeam.teamName = _teamName;
-        newTeam.leagueType = _leagueType;
 
         // Assign the team ID to the user
         userTeams[msg.sender] = teamCount;
     }
 
-    function addPlayer(uint256 _playerId) public {
+    function addPlayer(uint256 _playerName) public {
         require(userTeams[msg.sender] != 0, "User must create a team first");
         require(
             teams[userTeams[msg.sender]].players.length < MAX_PLAYERS,
@@ -56,7 +55,7 @@ contract TeamCreation {
         );
 
         // Get the player's price from the PlayerContract
-        uint256 playerPrice = playerContract.getPlayerPrice(_playerId);
+        uint256 playerPrice = playerContract.getPlayerPrice(_playerName);
 
         // Ensure the team has enough budget to add the player
         require(
@@ -78,11 +77,11 @@ contract TeamCreation {
         uint256[] storage players = team.players;
 
         // Find the player index in the team
-        uint256 playerIndex = findPlayerIndex(players, _playerId);
+        uint256 playerIndex = findPlayerIndex(players, _playerName);
         require(playerIndex != players.length, "Player not found in the team");
 
         // Get the player's price from the PlayerContract
-        uint256 playerPrice = playerContract.getPlayerPrice(_playerId);
+        uint256 playerPrice = playerContract.getPlayerPrice(_playerName);
 
         // Remove the player from the team
         players[playerIndex] = players[players.length - 1];
@@ -92,7 +91,7 @@ contract TeamCreation {
         team.teamBudget += playerPrice;
     }
 
-    function transferPlayer(address _to, uint256 _playerId) public {
+    function transferPlayer(address _to, uint256 _playerName) public {
         require(userTeams[msg.sender] != 0, "User must create a team first");
         require(userTeams[_to] != 0, "Recipient must have a team");
 
@@ -121,19 +120,30 @@ contract TeamCreation {
         teams[userTeams[msg.sender]].teamName = _teamName;
     }
 
-    function updatePlayer(uint256 _playerId) public {
+    function updatePlayer(uint256 _playerId, uint256 _newPlayerId) public {
         require(userTeams[msg.sender] != 0, "User must create a team first");
 
         Team storage team = teams[userTeams[msg.sender]];
 
-        // Ensure the player exists in the team
+        // Ensure the existing player exists in the team
         require(
             playerExists(team.players, _playerId),
-            "Player not found in the team"
+            "Existing player not found in the team"
         );
 
-        // Add your logic for updating the player for a new game week
-        // ...
+        // Ensure the new player exists
+        require(playerExists(allPlayers, _newPlayerId), "New player not found");
+
+        // Update the player in the team with the new player
+        for (uint256 i = 0; i < team.players.length; i++) {
+            if (team.players[i] == _playerId) {
+                team.players[i] = _newPlayerId;
+                break;
+            }
+        }
+
+        // Emit an event or perform any other necessary actions
+        emit PlayerUpdated(_playerId, _newPlayerId);
     }
 
     function findPlayerIndex(
