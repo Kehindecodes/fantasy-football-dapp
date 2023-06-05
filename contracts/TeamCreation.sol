@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.9;
 
 import "./PlayerContract.sol"; // Import the contract that defines the Player struct
 
@@ -25,14 +25,15 @@ contract TeamCreation {
     uint256 public constant TEAM_BUDGET = 100000000; // 100M
 
     PlayerContract public playerContract; // Instance of the PlayerContract
+    event PlayerUpdated(uint256, uint256);
 
-    modifier isTeamCreationAllowed() {
-        // Add logic to check if team creation or updates are allowed based on the game week
-        require(
-            /* Add your condition here */ "Team creation/update not allowed at this time"
-        );
-        _;
-    }
+    // modifier isTeamCreationAllowed() {
+    //     // Add logic to check if team creation or updates are allowed based on the game week
+    //     require(
+    //         /* Add your condition here */ "Team creation/update not allowed at this time"
+    //     );
+    //     _;
+    // }
 
     /**
      * @dev Constructor function to initialize the TeamCreation contract.
@@ -46,7 +47,7 @@ contract TeamCreation {
      * @dev Creates a new team with a given team name.
      * @param _teamName The name of the team.
      */
-    function createTeam(string memory _teamName) public isTeamCreationAllowed {
+    function createTeam(string memory _teamName) public {
         require(userTeams[msg.sender] == 0, "User can only create one team");
 
         // Create a new team
@@ -72,9 +73,9 @@ contract TeamCreation {
         );
 
         // Get the player's position from the PlayerContract
-        PlayerPosition playerPosition = playerContract.getPlayerPosition(
-            _playerName
-        );
+        PlayerContract.PlayerPosition playerPosition = playerContract
+            .players[_playerName]
+            .position;
 
         // Ensure the team has enough budget to add the player
         require(
@@ -91,7 +92,7 @@ contract TeamCreation {
             .getPlayerPrice(_playerName);
 
         // Add the player to the team
-        teams[userTeams[msg.sender]].players.push(_playerId);
+        teams[userTeams[msg.sender]].players.push(_playerName);
     }
 
     /**
@@ -219,9 +220,55 @@ contract TeamCreation {
      */
     function validatePositionRestrictions(
         uint256 _teamId,
-        PlayerPosition _playerPosition
-    ) internal view {
-        // Add your position restriction validation logic here
+        PlayerContract.PlayerPosition _playerPosition
+    ) private {
+        Team storage team = teams[_teamId];
+
+        // Count the number of players in each position
+        uint256 numStrikers = 0;
+        uint256 numMidfieldersForwards = 0;
+        uint256 numDefenders = 0;
+        uint256 numGoalkeepers = 0;
+
+        for (uint256 i = 0; i < team.players.length; i++) {
+            PlayerContract.PlayerPosition position = playerContract
+                .players[team.players[i]]
+                .position;
+            if (position == PlayerContract.PlayerPosition.Striker) {
+                numStrikers++;
+            } else if (
+                position == PlayerContract.PlayerPosition.Midfielder ||
+                position == PlayerContract.PlayerPosition.Forward
+            ) {
+                numMidfieldersForwards++;
+            } else if (position == PlayerContract.PlayerPosition.Defender) {
+                numDefenders++;
+            } else if (position == PlayerContract.PlayerPosition.Goalkeeper) {
+                numGoalkeepers++;
+            }
+        }
+
+        // Check position restrictions
+        if (_playerPosition == PlayerContract.PlayerPosition.Striker) {
+            require(numStrikers < 3, "Exceeded maximum number of strikers");
+        } else if (
+            _playerPosition == PlayerContract.PlayerPosition.Midfielder ||
+            _playerPosition == PlayerContract.PlayerPosition.Forward
+        ) {
+            require(
+                numMidfieldersForwards < 5,
+                "Exceeded maximum number of midfielders/forwards"
+            );
+        } else if (_playerPosition == PlayerContract.PlayerPosition.Defender) {
+            require(numDefenders < 5, "Exceeded maximum number of defenders");
+        } else if (
+            _playerPosition == PlayerContract.PlayerPosition.Goalkeeper
+        ) {
+            require(
+                numGoalkeepers < 2,
+                "Exceeded maximum number of goalkeepers"
+            );
+        }
     }
 
     /**
