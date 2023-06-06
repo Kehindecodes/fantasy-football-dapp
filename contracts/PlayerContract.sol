@@ -80,4 +80,14 @@ contract PlayerContract {
 
         return gameWeekPoints[_playerId][_gameWeek];
     }
+
+    function getPlayerPrice(uint256 _playerId) public view returns (uint256) {
+        return players[_playerId].playerPrice;
+    }
+
+    function getPlayerPosition(
+        uint256 _playerId
+    ) public view returns (PlayerPosition) {
+        return players[_playerId].position;
+    }
 }

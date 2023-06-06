@@ -63,9 +63,9 @@ contract TeamCreation {
 
     /**
      * @dev Adds a player to the team.
-     * @param _playerName The name of the player to add.
+     * @param _playerId The id of the player to add.
      */
-    function addPlayer(uint256 _playerName) public {
+    function addPlayer(uint256 _playerId) public {
         require(userTeams[msg.sender] != 0, "User must create a team first");
         require(
             teams[userTeams[msg.sender]].players.length < MAX_PLAYERS,
@@ -74,13 +74,12 @@ contract TeamCreation {
 
         // Get the player's position from the PlayerContract
         PlayerContract.PlayerPosition playerPosition = playerContract
-            .players[_playerName]
-            .position;
+            .getPlayerPosition(_playerId);
 
         // Ensure the team has enough budget to add the player
         require(
             teams[userTeams[msg.sender]].teamBudget >=
-                playerContract.getPlayerPrice(_playerName),
+                playerContract.getPlayerPrice(_playerId),
             "Insufficient team budget"
         );
 
@@ -89,10 +88,10 @@ contract TeamCreation {
 
         // Deduct the player's price from the team budget
         teams[userTeams[msg.sender]].teamBudget -= playerContract
-            .getPlayerPrice(_playerName);
+            .getPlayerPrice(_playerId);
 
         // Add the player to the team
-        teams[userTeams[msg.sender]].players.push(_playerName);
+        teams[userTeams[msg.sender]].players.push(_playerId);
     }
 
     /**
@@ -109,7 +108,7 @@ contract TeamCreation {
         uint256 playerIndex = findPlayerIndex(players, _playerId);
 
         // Ensure the player is found in the team
-        require(playerIndex != uint256(-1), "Player not found in the team");
+        require(playerIndex != 2 ** 256 - 1, "Player not found in the team");
 
         // Remove the player from the team
         players[playerIndex] = players[players.length - 1];
@@ -119,9 +118,9 @@ contract TeamCreation {
     /**
      * @dev Transfers a player from the sender's team to the recipient's team.
      * @param _to The address of the recipient.
-     * @param _playerName The name of the player to transfer.
+     * @param _playerId The Id of the player to transfer.
      */
-    function transferPlayer(address _to, uint256 _playerName) public {
+    function transferPlayer(address _to, uint256 _playerId) public {
         require(userTeams[msg.sender] != 0, "User must create a team first");
         require(userTeams[_to] != 0, "Recipient must have a team");
 
@@ -130,18 +129,18 @@ contract TeamCreation {
 
         // Ensure the player exists in the sender's team
         require(
-            playerExists(senderTeam.players, _playerName),
+            playerExists(senderTeam.players, _playerId),
             "Player not found in the sender's team"
         );
 
         // Get the player's price from the PlayerContract
-        uint256 playerPrice = playerContract.getPlayerPrice(_playerName);
+        uint256 playerPrice = playerContract.getPlayerPrice(_playerId);
 
         // Deduct the player's price from the sender's team budget
         senderTeam.teamBudget -= playerPrice;
 
         // Add the player to the recipient's team
-        recipientTeam.players.push(_playerName);
+        recipientTeam.players.push(_playerId);
     }
 
     /**
@@ -221,7 +220,7 @@ contract TeamCreation {
     function validatePositionRestrictions(
         uint256 _teamId,
         PlayerContract.PlayerPosition _playerPosition
-    ) private {
+    ) private view {
         Team storage team = teams[_teamId];
 
         // Count the number of players in each position
@@ -232,14 +231,11 @@ contract TeamCreation {
 
         for (uint256 i = 0; i < team.players.length; i++) {
             PlayerContract.PlayerPosition position = playerContract
-                .players[team.players[i]]
-                .position;
+                .getPlayerPosition(team.players[i]);
+
             if (position == PlayerContract.PlayerPosition.Striker) {
                 numStrikers++;
-            } else if (
-                position == PlayerContract.PlayerPosition.Midfielder ||
-                position == PlayerContract.PlayerPosition.Forward
-            ) {
+            } else if (position == PlayerContract.PlayerPosition.Midfielder) {
                 numMidfieldersForwards++;
             } else if (position == PlayerContract.PlayerPosition.Defender) {
                 numDefenders++;
@@ -252,8 +248,7 @@ contract TeamCreation {
         if (_playerPosition == PlayerContract.PlayerPosition.Striker) {
             require(numStrikers < 3, "Exceeded maximum number of strikers");
         } else if (
-            _playerPosition == PlayerContract.PlayerPosition.Midfielder ||
-            _playerPosition == PlayerContract.PlayerPosition.Forward
+            _playerPosition == PlayerContract.PlayerPosition.Midfielder
         ) {
             require(
                 numMidfieldersForwards < 5,
@@ -286,7 +281,7 @@ contract TeamCreation {
                 return i;
             }
         }
-        return uint256(-1);
+        return 2 ** 256 - 1;
     }
 
     /**
@@ -299,6 +294,6 @@ contract TeamCreation {
         uint256[] memory _players,
         uint256 _playerId
     ) internal pure returns (bool) {
-        return findPlayerIndex(_players, _playerId) != uint256(-1);
+        return findPlayerIndex(_players, _playerId) != 2 ** 256 - 1;
     }
 }
