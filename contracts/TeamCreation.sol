@@ -71,6 +71,10 @@ contract TeamCreation {
             teams[userTeams[msg.sender]].players.length < MAX_PLAYERS,
             "Team already has the maximum number of players"
         );
+        // get player with the id from the player Contract
+        PlayerContract.Player memory player = playerContract.getPlayer(
+            _playerId
+        );
 
         // Get the player's position from the PlayerContract
         PlayerContract.PlayerPosition playerPosition = playerContract
@@ -91,7 +95,7 @@ contract TeamCreation {
             .getPlayerPrice(_playerId);
 
         // Add the player to the team
-        teams[userTeams[msg.sender]].players.push(_playerId);
+        teams[userTeams[msg.sender]].players.push(player);
     }
 
     /**
